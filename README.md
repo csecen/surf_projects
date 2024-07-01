@@ -1,0 +1,1 @@
+## This repository is meant to hold several projects and associated files all geared around surfing. For a more detailed description of the individual projects themselves, please see the associated README files for each.
