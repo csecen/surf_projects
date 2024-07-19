@@ -15,8 +15,7 @@ from google.oauth2 import service_account
 def collect_images(folder_id, service, data_file):
     columns = ['Country', 'Break', 'Lat', 'Long']
     df = pd.read_csv(data_file, usecols=columns)
-    df.Break = df.Break.str.lower().str.replace("'", '').str.replace(' ', '_')
-    df = df[:10]
+    # df = df[:10]
 
     delay=5
     fn='temp_map.html'
@@ -108,11 +107,12 @@ def check_folder(service, folder_name):
 
 def main():
 
-    parser = argparse.ArgumentParser(description='Input JSON file with required credentials')
-    parser.add_argument('filename', help='name of credentials file')
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser(description='Input JSON file with required credentials')
+    # parser.add_argument('filename', help='name of credentials file')
+    # args = parser.parse_args()
 
-    config_file = vars(args)['filename']
+    # config_file = vars(args)['filename']
+    config_file = './utils/config.json'
 
     with open(config_file, 'r') as f:
         cred_config = json.load(f)
