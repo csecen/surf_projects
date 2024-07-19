@@ -4,6 +4,8 @@ import re
 from bs4 import BeautifulSoup
 import folium
 import numpy as np
+import os
+from selenium import webdriver
 
 
 def parse_regions(soup, breaks):
@@ -47,6 +49,8 @@ for b in breaks:
 
     country = re.search(r'\/atlas\/\w+\/(\w+)', surl).group(1)
     
+    break_name = b.text.lower().replace("'", '').replace(' ', '_')
+
     latlong = re.search(r'=(-?\d+\.\d+),(-?\d+\.\d+)', ssoup.find('div', attrs={'class':'map big_map responsive_map'}).iframe.attrs['src'])
     lat = latlong.group(1)
     long = latlong.group(2)
@@ -56,12 +60,13 @@ for b in breaks:
     direction = dets.findAll('td')[2].text
     bottom = dets.findAll('td')[3].text
     difficulty = dets.findAll('td')[4].text
+    fixed = 'N'
     
-    data.append([country, b.text, lat, long, wave_type, direction, bottom, difficulty])
+    data.append([country, break_name, lat, long, wave_type, direction, bottom, difficulty, fixed])
 
 # save data to a csv
 df = pd.DataFrame(np.array(data),
-                   columns=['Country', 'Break', 'Lat', 'Long', 'Wave_type', 'Direction', 'Bottom', 'Difficulty'])
+                   columns=['Country', 'Break', 'Lat', 'Long', 'Wave_type', 'Direction', 'Bottom', 'Difficulty', 'Fixed'])
 df.to_csv('surf_breaks.csv', index=False)
 
 # map each break found as a spot check to ensure the parsing worked correctly
@@ -75,4 +80,10 @@ for i in range(len(df)):
     ).add_to(m)
 
 # Show the map again
-m.show_in_browser()
+fn='temp_map.html'
+path = path=os.getcwd()
+tmpurl=f'file://{path}/{fn}'
+m.save(fn)
+browser = webdriver.Chrome()
+browser.get(tmpurl)
+browser.quit()
