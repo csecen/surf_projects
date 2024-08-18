@@ -119,23 +119,6 @@ def check_folder(service, folder_name):
         return None
 
 
-def list_items(service):
-    results = (
-        service.files()
-        .list(pageSize=1000, fields="nextPageToken, files(id, name)")
-        .execute()
-    )
-    items = results.get("files", [])
-
-    # if not items:
-    #     print("No files found.")
-    # print("Files:")
-    # for item in items:
-    #     print(f"{item['name']} ({item['id']})")
-
-    # return items
-
-
 def main():
 
     # parser = argparse.ArgumentParser(description='Input JSON file with required credentials')
