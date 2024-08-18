@@ -1,2 +1,4 @@
 # ignore checkpoint files
 *.ipynb_checkpoints 
+utils/config.json
+utils/surf-project.json
