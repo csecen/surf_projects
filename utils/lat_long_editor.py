@@ -45,7 +45,7 @@ def main():
         browser.get(tmpurl)
         time.sleep(10)
 
-        copied_coords = input('New Coordinates: ')
+        copied_coords = input(f'{idx+1} New Coordinates: ')
         if copied_coords == 'n':
             new_lats[idx] = float(lat)
             new_longs[idx] = float(long)
