@@ -2,6 +2,7 @@ import folium
 import os
 import time
 import json
+import re
 import argparse
 import pandas as pd
 from selenium import webdriver
@@ -12,18 +13,23 @@ from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
 
 
-def collect_images(folder_id, service, data_file):
+def collect_images(folder_id, service, data_file, saved_locs):
     columns = ['Country', 'Break', 'Lat', 'Long']
     df = pd.read_csv(data_file, usecols=columns)
+    # temp_df = df[df['Saved'] == 'N']
+    # start_idx = temp_df.index[0]
     # df = df[:10]
 
     delay=5
     fn='temp_map.html'
     path = path=os.getcwd()
 
-
-    for _, row in df.iterrows():
+    # try:
+    for idx, row in df.iterrows():
         lat, long = row.Lat, row.Long
+
+        if row.Break in saved_locs:
+            continue
 
         m = folium.Map(location=[lat,long], zoom_start=16)
         tile = folium.TileLayer(
@@ -59,6 +65,14 @@ def collect_images(folder_id, service, data_file):
             file = None
         finally:
             os.remove(map_file)
+
+    # except Exception as E:
+    #     print(f"A file error occurred: {E}")
+    #     file = None
+    # finally:
+    #     os.remove(map_file)
+    #     df.Saved.iloc[start_idx:start_idx+idx] = 'Y'
+    #     df.to_csv(data_file, index=False)
 
     os.remove(fn)
 
@@ -105,6 +119,23 @@ def check_folder(service, folder_name):
         return None
 
 
+def list_items(service):
+    results = (
+        service.files()
+        .list(pageSize=1000, fields="nextPageToken, files(id, name)")
+        .execute()
+    )
+    items = results.get("files", [])
+
+    # if not items:
+    #     print("No files found.")
+    # print("Files:")
+    # for item in items:
+    #     print(f"{item['name']} ({item['id']})")
+
+    # return items
+
+
 def main():
 
     # parser = argparse.ArgumentParser(description='Input JSON file with required credentials')
@@ -121,6 +152,7 @@ def main():
     email = cred_config['email']
     folder_name = cred_config['folder_name']
     data_file = cred_config['data_file']
+    delete = cred_config['delete']
 
     SCOPES = ['https://www.googleapis.com/auth/drive']
     SERVICE_ACCOUNT_FILE = cred_file
@@ -129,11 +161,40 @@ def main():
 
     service = build("drive", "v3", credentials=creds)
 
+    # check if the given folder name exists and delete the folder if the user wants to clear it        
     folder_id = check_folder(service, folder_name)
-    if not folder_id:
+    if folder_id and delete:
+        try:
+            service.files().delete(fileId=folder_id).execute()
+            print(f"Successfully deleted file/folder with ID: {folder_id}")
+            time.sleep(2)
+        except Exception as e:
+            print(f"Error deleting file/folder with ID: {folder_id}")
+            print(f"Error details: {str(e)}")  
+
+    # create the folder if it doesn't exist or if it was deleted
+    if not folder_id or delete:
         folder_id, service = create_folder(service, email, folder_name)
 
-    collect_images(folder_id, service, data_file)
+
+    # collect existing file names to know which files not to scrape again
+    results = (
+        service.files()
+        .list(pageSize=1000, fields="nextPageToken, files(id, name)")
+        .execute()
+    )
+    items = results.get("files", [])
+    saved_locs = set()
+
+    for item in items:
+        loc_match = re.search('\w+?_(\w+)\.png', item['name'])
+        if loc_match:
+            loc_name = loc_match.group(1)
+            saved_locs.add(loc_name)
+
+
+    # begin scraping image files
+    collect_images(folder_id, service, data_file, saved_locs)
 
 
 
