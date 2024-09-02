@@ -60,6 +60,34 @@ def get_heat_urls(years):
     return list(heat_urls)
 
 
+def parse_scores(heat_urls):
+    for idx, u in enumerate(heat_urls):
+        r = requests.get(u)
+        soup = BeautifulSoup(r.content, 'html.parser')
+
+        heat_name = soup.find('span', attrs={'class':'heat-name'})
+        # print(heat_name.text)
+        # print(u)
+        athlete_names = soup.find_all('span', attrs={'class', 'athlete-name'})
+        score_dict = {athlete.text:[] for athlete in athlete_names}
+
+        all_wave_scores = soup.find_all('div', attrs={'class':'wave-item'})
+        
+        for waves in all_wave_scores:
+            scores = waves.find_all('div', attrs={'class':'wave'})
+            for idx in range(len(athlete_names)):
+                score = scores[idx]
+                if score.span:
+                    score_dict[athlete_names[idx].text].append(score.text.strip())
+        
+
+        # for k, v in score_dict.items():
+        #     print(f'{k}: {" ".join(v)}')
+        
+        # print()
+        # print()
+
+
 
 def main():
 
@@ -78,8 +106,10 @@ def main():
 
     years = ['2024']
     heat_urls = get_heat_urls(years)
-    for u in heat_urls:
-        print(u)
+    # for u in heat_urls:
+    #     print(u)
+
+    scores = parse_scores(heat_urls)    
 
 
 if __name__ == '__main__':
